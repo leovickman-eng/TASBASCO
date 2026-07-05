@@ -200,6 +200,35 @@
   }
   .status-btn:hover{ border-color:var(--accent); color:var(--accent-dark); }
   .status-btn.is-archived{ color:var(--accent-dark); background:var(--accent-soft); border-color:var(--accent); }
+
+  .switch-label-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .switch-label-row label{ margin-bottom:0 !important; }
+  .link-btn{ background:none; border:none; color:var(--accent-dark); font-size:11.5px; font-weight:600; cursor:pointer; padding:0; }
+  .link-btn:hover{ text-decoration:underline; }
+  .avatar-btn.add-me{ border-style:dashed; color:var(--muted); font-weight:600; }
+  .avatar-btn.add-me:hover{ color:var(--accent-dark); border-color:var(--accent); }
+
+  .onboard-backdrop{
+    position:fixed; inset:0; background:rgba(20,22,26,0.55); display:flex; align-items:center; justify-content:center;
+    padding:20px; z-index:80; opacity:0; pointer-events:none; transition:.15s;
+  }
+  .onboard-backdrop.open{ opacity:1; pointer-events:auto; }
+  .onboard-card{
+    background:var(--card); border-radius:20px; max-width:380px; width:100%; padding:28px 26px; text-align:center;
+  }
+  .onboard-card .onboard-icon{ font-size:32px; margin-bottom:8px; }
+  .onboard-card h2{ margin:0 0 6px; font-size:18px; font-weight:700; }
+  .onboard-card p{ margin:0 0 18px; font-size:13px; color:var(--muted); line-height:1.5; }
+  .onboard-card input{
+    width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--border);
+    font-size:14px; outline:none; text-align:center; font-family:inherit; margin-bottom:12px;
+  }
+  .onboard-card input:focus{ border-color:var(--accent); }
+  .onboard-card button{
+    width:100%; padding:11px; border-radius:10px; border:none; background:var(--accent); color:#fff;
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .onboard-card button:hover{ background:var(--accent-dark); }
 </style>
 </head>
 <body>
@@ -226,7 +255,10 @@
   <div id="connBanner" class="conn-banner" style="display:none"></div>
 
   <div class="switcher">
-    <label>Du är</label>
+    <div class="switch-label-row">
+      <label>Du är</label>
+      <button class="link-btn" id="switchProfileBtn">Inte du? Byt profil</button>
+    </div>
     <div class="avatar-row" id="avatarRow"></div>
   </div>
 
@@ -259,6 +291,16 @@
   <div class="modal" id="modalContent"></div>
 </div>
 
+<div class="onboard-backdrop" id="onboardBackdrop">
+  <div class="onboard-card">
+    <div class="onboard-icon">👋</div>
+    <h2 id="onboardTitle">Välkommen till TABASCO</h2>
+    <p>Skriv ditt namn så vet gänget vem du är. Redan med? Skriv samma namn som förut för att komma tillbaka till din profil.</p>
+    <input type="text" id="onboardInput" placeholder="Ditt namn" maxlength="20">
+    <button id="onboardSubmitBtn">Kör igång</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -284,7 +326,6 @@ import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebase
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB1dnkBRtBBKZRVslBZmBXk5AInXf-9c4c",
   authDomain: "tabasco-324f0.firebaseapp.com",
-  // TODO: byt ut raden nedan mot din riktiga databaseURL (se kommentaren ovan för var du hittar den)
   databaseURL: "https://tabasco-324f0-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "tabasco-324f0",
   storageBucket: "tabasco-324f0.firebasestorage.app",
@@ -340,45 +381,35 @@ function weekRangeLabel(){
 
 const CURRENT_WEEK = isoWeekId(new Date());
 const HISTORY_WEEKS = 8;
-const NAMES = ['Jake','Marcus','Owen','Ravi','Tom','Diego','Sam','Ben'];
+
+function newMember(name, index){
+  return {
+    id: 'm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6),
+    name,
+    initials: name.trim().slice(0,2).toUpperCase(),
+    color: COLORS[index % COLORS.length],
+    categories: PRESET_CATS.map(c=>({...c, archived:false})),
+    logs: { [CURRENT_WEEK]: {} },
+  };
+}
 
 function seedState(){
-  const members = NAMES.map((name,i)=>({
-    id:'m'+i,
-    name,
-    initials: name.slice(0,2).toUpperCase(),
-    color: COLORS[i % COLORS.length],
-    categories: PRESET_CATS.map(c=>({...c, archived:false})),
-    logs: {},        // weekId -> { catId: bool }
-  }));
-
-  members.forEach((m, mi) => {
-    for(let w=HISTORY_WEEKS; w>=1; w--){
-      const wk = weeksAgoId(w);
-      const log = {};
-      m.categories.forEach((c,ci)=>{
-        const bias = 0.55 + (mi%3)*0.1 - (ci===1?0.15:0);
-        log[c.id] = Math.random() < bias;
-      });
-      m.logs[wk] = log;
-    }
-    m.logs[CURRENT_WEEK] = m.logs[CURRENT_WEEK] || {};
-  });
-
   return {
-    members,
-    activeId: members[0].id,
+    members: [],
     feed: [
-      { text:'TABASCO är igång 🎉', ts: Date.now() - 1000*60*60*24 }
+      { text:'TABASCO är igång 🎉', ts: Date.now() }
     ]
   };
 }
 
 function normalizeState(data){
+  if(!data.members) data.members = [];
   data.members.forEach(m => {
+    if(!m.logs) m.logs = {};
     if(!m.logs[CURRENT_WEEK]) m.logs[CURRENT_WEEK] = {};
     m.categories.forEach(c => { if(c.archived === undefined) c.archived = false; });
   });
+  if(!data.feed) data.feed = [];
   return data;
 }
 function saveState(){
@@ -395,11 +426,45 @@ function saveState(){
 let state = null;
 let editingCatId = null;
 let statsOpenFor = null;
+let myId = localStorage.getItem('tabascoMyId') || null; // per-device identity, never synced
 
 /* ---------- Helpers ---------- */
 function getMember(id){ return state.members.find(m=>m.id===id); }
-function activeMember(){ return getMember(state.activeId); }
+function activeMember(){ return getMember(myId); }
 function activeCats(member){ return member.categories.filter(c=>!c.archived); }
+
+function setMyId(id){
+  myId = id;
+  localStorage.setItem('tabascoMyId', id);
+}
+
+function updateOnboarding(){
+  const needsOnboarding = !myId || !getMember(myId);
+  const backdrop = document.getElementById('onboardBackdrop');
+  document.getElementById('onboardTitle').textContent = state.members.length
+    ? 'Vem är du?'
+    : 'Välkommen till TABASCO';
+  backdrop.classList.toggle('open', needsOnboarding);
+}
+
+function submitOnboarding(){
+  const input = document.getElementById('onboardInput');
+  const name = input.value.trim();
+  if(!name) return;
+  const existing = state.members.find(m => m.name.toLowerCase() === name.toLowerCase());
+  if(existing){
+    setMyId(existing.id);
+    toast(`Välkommen tillbaka, ${existing.name}!`);
+  } else {
+    const m = newMember(name, state.members.length);
+    state.members.push(m);
+    setMyId(m.id);
+    addFeed(`<b>${m.name}</b> gick med i TABASCO 🎉`);
+    saveState();
+  }
+  input.value = '';
+  render();
+}
 
 function streakFor(member, catId){
   let streak = 0;
@@ -464,19 +529,20 @@ function ringSvg(pct){
 
 function render(){
   document.getElementById('weekLabel').textContent = weekRangeLabel();
+  updateOnboarding();
 
   const avatarRow = document.getElementById('avatarRow');
   avatarRow.innerHTML = state.members.map(m=>{
-    return `<button class="avatar-btn ${m.id===state.activeId?'active':''}" data-switch="${m.id}">
+    return `<button class="avatar-btn ${m.id===myId?'active':''}" data-switch="${m.id}">
       <span class="avatar" style="background:${m.color}">${m.initials}</span>
       ${m.name}
     </button>`;
-  }).join('');
+  }).join('') + `<button class="avatar-btn add-me" id="addMeBtn">+ Lägg till dig</button>`;
 
   const me = activeMember();
   const teamGrid = document.getElementById('teamGrid');
   teamGrid.innerHTML = state.members.map(m=>{
-    const isSelf = m.id === state.activeId;
+    const isSelf = m.id === myId;
     const prog = weekProgress(m);
     const streak = bestStreak(m);
     const log = m.logs[CURRENT_WEEK] || {};
@@ -501,8 +567,15 @@ function render(){
     </div>`;
   }).join('');
 
-  document.getElementById('panelName').textContent = `${me.name}s incheckning`;
+  document.getElementById('panelName').textContent = me ? `${me.name}s incheckning` : 'Din incheckning';
   const checklist = document.getElementById('checklist');
+  if(!me){
+    checklist.innerHTML = '<div class="empty">Fyll i ditt namn för att komma igång.</div>';
+    document.getElementById('feedList').innerHTML = state.feed.map(f=>`
+      <div class="feed-item"><span class="t">${f.text}</span><span class="feed-time">${timeAgo(f.ts)}</span></div>
+    `).join('') || '<div class="empty">Ingen aktivitet ännu.</div>';
+    return;
+  }
   const meLog = me.logs[CURRENT_WEEK] || {};
   checklist.innerHTML = activeCats(me).map(c=>{
     const on = !!meLog[c.id];
@@ -535,7 +608,7 @@ function render(){
 function openStatsModal(memberId, silent){
   statsOpenFor = memberId;
   const m = getMember(memberId);
-  const isSelf = memberId === state.activeId;
+  const isSelf = memberId === myId;
   const rate = overallCompletionRate(m);
   const best = Math.max(0, ...m.categories.map(c=>streakFor(m,c.id)));
   const current = bestStreak(m);
@@ -586,8 +659,18 @@ document.addEventListener('click', (e)=>{
   const switchBtn = e.target.closest('[data-switch]');
   if(switchBtn){
     editingCatId = null;
-    state.activeId = switchBtn.dataset.switch;
-    saveState(); render();
+    setMyId(switchBtn.dataset.switch);
+    render();
+    return;
+  }
+  if(e.target.id === 'addMeBtn' || e.target.id === 'switchProfileBtn'){
+    document.getElementById('onboardBackdrop').classList.add('open');
+    document.getElementById('onboardInput').value = '';
+    document.getElementById('onboardInput').focus();
+    return;
+  }
+  if(e.target.id === 'onboardSubmitBtn'){
+    submitOnboarding();
     return;
   }
   const statsBtn = e.target.closest('[data-stats]');
@@ -662,6 +745,10 @@ document.addEventListener('click', (e)=>{
 
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeStatsModal();
+  if(e.key === 'Enter' && document.activeElement && document.activeElement.id === 'onboardInput'){
+    submitOnboarding();
+    return;
+  }
   if(e.key === 'Enter' && editingCatId){
     const input = document.querySelector(`[data-edit-input="${editingCatId}"]`);
     if(input && document.activeElement === input){
