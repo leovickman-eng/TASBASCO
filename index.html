@@ -350,12 +350,6 @@ function showConnBanner(html){
 
 /* ---------- Setup & data model ---------- */
 const COLORS = ['#1f6f5c','#b8763a','#5a6bb0','#a94f7d','#3f8f8a','#c0703a','#6a5aa8','#4c8a52','#3a7ea6','#b04a5a'];
-const PRESET_CATS = [
-  { id:'train', label:'Tränat den här veckan' },
-  { id:'nocandy', label:'Hållit mig borta från godis/skräpmat' },
-  { id:'water', label:'Druckit tillräckligt med vatten' },
-  { id:'partner', label:'Gjort något snällt för partnern' },
-];
 
 function isoWeekId(d){
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -383,7 +377,7 @@ function newMember(name, index){
     name,
     initials: name.trim().slice(0,2).toUpperCase(),
     color: COLORS[index % COLORS.length],
-    categories: PRESET_CATS.map(c=>({...c, archived:false})),
+    categories: [],
     logs: { [CURRENT_WEEK]: {} },
   };
 }
