@@ -371,12 +371,7 @@ function weeksAgoId(n){
   return isoWeekId(d);
 }
 function weekRangeLabel(){
-  const now = new Date();
-  const day = (now.getDay()+6)%7;
-  const monday = new Date(now); monday.setDate(now.getDate()-day);
-  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
-  const opts = {month:'short', day:'numeric'};
-  return `${monday.toLocaleDateString('sv-SE',opts)} – ${sunday.toLocaleDateString('sv-SE',opts)}`;
+  return parseInt(CURRENT_WEEK.split('-W')[1], 10);
 }
 
 const CURRENT_WEEK = isoWeekId(new Date());
