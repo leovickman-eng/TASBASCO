@@ -127,7 +127,8 @@
     background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
     padding:20px; position:sticky; top:20px;
   }
-  .panel h2{ font-size:15.5px; margin:0 0 3px; font-weight:600; }
+  .panel-head-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:3px; }
+  .panel h2{ font-size:15.5px; margin:0; font-weight:600; }
   .panel .panel-sub{ font-size:12.5px; color:var(--muted); margin-bottom:16px; line-height:1.5; }
 
   .checklist{ display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
@@ -296,7 +297,10 @@
     </div>
 
     <div class="panel">
-      <h2 id="panelName">Din incheckning</h2>
+      <div class="panel-head-row">
+        <h2 id="panelName">Din incheckning</h2>
+        <button class="link-btn" id="myStatsBtn">📊 Min statistik</button>
+      </div>
       <div class="panel-sub">Klicka för att markera som klar idag. Klicka på pennan för att redigera texten.</div>
       <div class="checklist" id="checklist"></div>
       <div class="emoji-picker" id="emojiPicker"></div>
@@ -592,6 +596,9 @@ function render(){
   }).join('');
 
   document.getElementById('panelName').textContent = me ? `${me.name}s incheckning` : 'Din incheckning';
+  const myStatsBtn = document.getElementById('myStatsBtn');
+  if(me){ myStatsBtn.style.display=''; myStatsBtn.dataset.stats = me.id; }
+  else { myStatsBtn.style.display='none'; }
   const checklist = document.getElementById('checklist');
   if(!me){
     checklist.innerHTML = '<div class="empty">Fyll i ditt namn för att komma igång.</div>';
