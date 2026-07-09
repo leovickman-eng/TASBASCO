@@ -13,16 +13,19 @@
 <meta name="theme-color" content="#1f6f5c">
 <style>
   :root{
-    --bg:#fafafa;
+    --bg:#faf9fc;
     --card:#ffffff;
-    --border:#eceef1;
-    --text:#16181c;
-    --muted:#8a8f98;
-    --accent:#1f6f5c;
-    --accent-dark:#154f41;
-    --accent-soft:#eaf3f0;
-    --warn:#c98a1f;
-    --danger:#d64545;
+    --border:#ece6f7;
+    --text:#18141f;
+    --muted:#8a8194;
+    --accent:#7c3aed;
+    --accent-dark:#5b21b6;
+    --accent-soft:#f2e9fe;
+    --success:#16a34a;
+    --success-soft:#e2f9e8;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+    --grad:linear-gradient(135deg,#7c3aed,#ec4899);
     --radius:14px;
   }
   * { box-sizing:border-box; }
@@ -50,16 +53,29 @@
   .switch-label-row label{ font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
   .link-btn{ background:none; border:none; color:var(--accent-dark); font-size:11.5px; font-weight:600; cursor:pointer; padding:0; }
   .link-btn:hover{ text-decoration:underline; }
-  .avatar-row{ display:flex; gap:8px; flex-wrap:wrap; }
-  .avatar-btn{
-    border:1px solid var(--border); background:var(--card); border-radius:10px;
-    padding:6px 12px 6px 6px; display:flex; align-items:center; gap:8px;
-    cursor:pointer; font-size:13px; color:var(--text); transition:.15s;
+  .current-profile-btn{
+    display:flex; align-items:center; gap:10px; padding:9px 14px; border-radius:12px;
+    border:1px solid var(--border); background:var(--card); cursor:pointer;
+    font-size:14px; font-weight:600; color:var(--text); width:100%; max-width:300px;
   }
-  .avatar-btn:hover{ border-color:var(--accent); }
-  .avatar-btn.active{ border-color:var(--accent); background:var(--accent-soft); font-weight:600; }
-  .avatar-btn.add-me{ border-style:dashed; color:var(--muted); font-weight:600; }
-  .avatar-btn.add-me:hover{ color:var(--accent-dark); border-color:var(--accent); }
+  .current-profile-btn:hover{ border-color:var(--accent); }
+  .current-profile-btn .chev{ margin-left:auto; color:var(--muted); font-size:11px; }
+  #currentProfileContent{ display:flex; align-items:center; gap:10px; }
+
+  .profile-dropdown{
+    display:none; margin-top:8px; border:1px solid var(--border); border-radius:12px;
+    background:var(--card); max-height:320px; overflow-y:auto; max-width:300px;
+  }
+  .profile-dropdown.open{ display:block; }
+  .profile-item{
+    display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer;
+    border-bottom:1px solid var(--border); font-size:13px;
+  }
+  .profile-item:last-child{ border-bottom:none; }
+  .profile-item:hover{ background:var(--accent-soft); }
+  .profile-item.active{ background:var(--accent-soft); font-weight:600; }
+  .profile-item.add-new{ color:var(--muted); font-weight:600; }
+  .profile-item.add-new:hover{ color:var(--accent-dark); }
   .avatar{
     width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center;
     font-size:11px; font-weight:700; color:#fff; flex-shrink:0;
@@ -80,10 +96,10 @@
   }
   .onboard-card input:focus{ border-color:var(--accent); }
   .onboard-card button{
-    width:100%; padding:11px; border-radius:10px; border:none; background:var(--accent); color:#fff;
-    font-size:14px; font-weight:600; cursor:pointer;
+    width:100%; padding:11px; border-radius:10px; border:none; background:var(--grad); color:#fff;
+    font-size:14px; font-weight:600; cursor:pointer; transition:.15s;
   }
-  .onboard-card button:hover{ background:var(--accent-dark); }
+  .onboard-card button:hover{ filter:brightness(1.08); }
 
   .grid{ display:grid; grid-template-columns: 1.5fr 1fr; gap:26px; align-items:start; }
   @media (max-width: 860px){
@@ -92,6 +108,22 @@
   }
 
   .section-title{ font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:0 0 14px 1px; }
+
+  .week-chart{
+    display:flex; flex-direction:column; gap:10px; margin-bottom:26px;
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px;
+  }
+  .week-chart-row{ display:flex; align-items:center; gap:10px; }
+  .week-chart-row .avatar{ width:24px; height:24px; font-size:10px; }
+  .week-chart-name{
+    font-size:12.5px; font-weight:600; width:76px; flex-shrink:0; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;
+  }
+  .week-chart-track{
+    flex:1; height:10px; border-radius:999px; background:var(--bg); border:1px solid var(--border); overflow:hidden;
+  }
+  .week-chart-fill{ height:100%; border-radius:999px; transition:width .3s; }
+  .week-chart-pct{ font-size:11.5px; font-weight:700; width:34px; text-align:right; flex-shrink:0; }
 
   .team-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(215px,1fr)); gap:12px; }
   .member-card{
@@ -114,7 +146,7 @@
     width:24px; height:24px; border-radius:50%; background:var(--bg); border:1px solid var(--border);
     display:flex; align-items:center; justify-content:center; font-size:12px; opacity:.4;
   }
-  .mc-emoji.done{ opacity:1; background:var(--accent-soft); border-color:var(--accent); }
+  .mc-emoji.done{ opacity:1; background:var(--success-soft); border-color:var(--success); }
 
   .mini-btn{
     width:100%; padding:7px; border-radius:9px; border:1px solid var(--border);
@@ -131,18 +163,25 @@
   .panel h2{ font-size:15.5px; margin:0; font-weight:600; }
   .panel .panel-sub{ font-size:12.5px; color:var(--muted); margin-bottom:16px; line-height:1.5; }
 
-  .checklist{ display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
-  .check-item{
-    display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:11px;
-    border:1px solid var(--border); background:transparent; cursor:pointer; transition:.15s;
+  .checklist{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(56px,1fr)); gap:10px; margin-bottom:14px;
   }
-  .check-item:hover{ border-color:var(--accent); }
-  .check-item.on{ background:var(--accent-soft); border-color:var(--accent); }
+  .grid-tile{
+    position:relative; aspect-ratio:1; border-radius:14px; border:1.5px solid var(--border);
+    background:var(--bg); display:flex; align-items:center; justify-content:center;
+    font-size:23px; cursor:pointer; transition:.15s;
+  }
+  .grid-tile:hover{ border-color:var(--accent); }
+  .grid-tile.on{ background:var(--success-soft); border-color:var(--success); }
+  .tile-streak{
+    position:absolute; bottom:3px; right:4px; font-size:9px; font-weight:800; color:var(--warn);
+    background:#fff; border-radius:6px; padding:0 3px; line-height:1.4;
+  }
   .ci-emoji{
     width:32px; height:32px; border-radius:50%; background:var(--bg); border:1.5px solid var(--border);
     display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;
   }
-  .check-item.on .ci-emoji{ background:var(--accent); border-color:var(--accent); }
+  .check-item.on .ci-emoji{ background:var(--success); border-color:var(--success); }
   .ci-label{ flex:1; font-size:13px; }
   .ci-label-input{
     flex:1; font-size:13px; border:none; border-bottom:1px solid var(--accent); background:transparent;
@@ -168,10 +207,10 @@
   }
   .add-row input:focus{ border-color:var(--accent); }
   .add-row button{
-    padding:9px 15px; border-radius:9px; border:none; background:var(--accent); color:#fff;
-    font-size:13px; font-weight:600; cursor:pointer;
+    padding:9px 15px; border-radius:9px; border:none; background:var(--grad); color:#fff;
+    font-size:13px; font-weight:600; cursor:pointer; transition:.15s;
   }
-  .add-row button:hover{ background:var(--accent-dark); }
+  .add-row button:hover{ filter:brightness(1.08); }
 
   .footnote{ font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.5; }
 
@@ -232,7 +271,7 @@
   }
   .cal-cell.empty{ visibility:hidden; }
   .cal-cell.future{ background:transparent; border:1px dashed var(--border); color:var(--muted); }
-  .cal-cell.cal-today{ outline:2px solid var(--text); outline-offset:1px; }
+  .cal-cell.cal-today{ outline:2px solid var(--accent); outline-offset:1px; }
   .cal-legend{ display:flex; align-items:center; gap:6px; margin-top:10px; font-size:10px; color:var(--muted); flex-wrap:wrap; }
   .cal-legend span.sw{ width:10px; height:10px; border-radius:3px; display:inline-block; }
   .year-toggle{ text-align:center; margin-top:12px; }
@@ -280,13 +319,19 @@
   <div class="switcher">
     <div class="switch-label-row">
       <label>Du är</label>
-      <button class="link-btn" id="switchProfileBtn">Inte du? Byt profil</button>
     </div>
-    <div class="avatar-row" id="avatarRow"></div>
+    <button class="current-profile-btn" id="currentProfileBtn">
+      <span id="currentProfileContent">Välj profil</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="profile-dropdown" id="profileDropdown"></div>
   </div>
 
   <div class="grid">
     <div>
+      <div class="section-title">Veckans progress</div>
+      <div class="week-chart" id="weekChart"></div>
+
       <div class="section-title">Idag — gänget</div>
       <div class="team-grid" id="teamGrid"></div>
 
@@ -301,7 +346,7 @@
         <h2 id="panelName">Din incheckning</h2>
         <button class="link-btn" id="myStatsBtn">📊 Min statistik</button>
       </div>
-      <div class="panel-sub">Klicka för att markera som klar idag. Klicka på pennan för att redigera texten.</div>
+      <div class="panel-sub">Tryck på en symbol för att markera som klar idag. Namn och symboler redigerar du under Statistik.</div>
       <div class="checklist" id="checklist"></div>
       <div class="emoji-picker" id="emojiPicker"></div>
       <div class="add-row">
@@ -360,7 +405,7 @@ function showConnBanner(html){
 }
 
 /* ---------- Setup & data model ---------- */
-const COLORS = ['#1f6f5c','#b8763a','#5a6bb0','#a94f7d','#3f8f8a','#c0703a','#6a5aa8','#4c8a52','#3a7ea6','#b04a5a'];
+const COLORS = ['#7c3aed','#ec4899','#f59e0b','#06b6d4','#22c55e','#ef4444','#6366f1','#f97316','#14b8a6','#d946ef'];
 const EMOJI_CHOICES = ['💧','✏️','🌻','🏋️','🏃','🍬','🥗','💜','📖','😴','🧘','🚭','☀️','🎯','💰','📵'];
 
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -396,15 +441,20 @@ function seedState(){
 
 function normalizeState(data){
   if(!data.members) data.members = [];
+  if(!Array.isArray(data.members)) data.members = Object.values(data.members);
+  data.members = data.members.filter(Boolean);
   data.members.forEach(m => {
     if(!m.logs) m.logs = {};
     if(!m.logs[TODAY]) m.logs[TODAY] = {};
+    if(!m.categories) m.categories = [];
+    if(!Array.isArray(m.categories)) m.categories = Object.values(m.categories).filter(Boolean);
     m.categories.forEach(c => {
       if(c.archived === undefined) c.archived = false;
       if(!c.emoji) c.emoji = '🎯';
     });
   });
   if(!data.feed) data.feed = [];
+  if(!Array.isArray(data.feed)) data.feed = Object.values(data.feed).filter(Boolean);
   return data;
 }
 function saveState(){
@@ -484,22 +534,22 @@ function todayProgress(member){
 }
 function overallCompletionRate(member, days){
   days = days === undefined ? RATE_WINDOW_DAYS : days;
+  const cats = activeCats(member);
+  if(cats.length === 0) return 0;
   let done=0, total=0;
   for(let d=0; d<=days; d++){
     const id = d===0 ? TODAY : daysAgoId(d);
-    const log = member.logs[id];
-    if(!log) continue;
-    member.categories.forEach(c=>{ if(log[c.id]!==undefined){ total++; if(log[c.id]) done++; } });
+    const log = member.logs[id] || {};
+    cats.forEach(c=>{ total++; if(log[c.id]) done++; });
   }
   return total ? Math.round((done/total)*100) : 0;
 }
 function dayStatsFor(member, dayId){
-  const log = member.logs[dayId];
-  if(!log) return null;
-  let total=0, done=0;
-  member.categories.forEach(c=>{ if(log[c.id]!==undefined){ total++; if(log[c.id]) done++; } });
-  if(total===0) return null;
-  return { done, total, pct: Math.round((done/total)*100) };
+  const cats = activeCats(member);
+  if(cats.length === 0) return null;
+  const log = member.logs[dayId] || {};
+  const done = cats.filter(c=>log[c.id]).length;
+  return { done, total: cats.length, pct: Math.round((done/cats.length)*100) };
 }
 function timeAgo(ts){
   const s = Math.floor((Date.now()-ts)/1000);
@@ -534,7 +584,7 @@ function lerpColor(a,b,t){
 }
 function pctToColor(pct){
   if(pct<=0) return '#eef0f2';
-  return lerpColor('#c9b8ef', '#2be26a', Math.min(1, pct/100));
+  return lerpColor('#9b5de5', '#22c55e', Math.min(1, pct/100));
 }
 
 /* ---------- Rendering ---------- */
@@ -547,7 +597,7 @@ function ringSvg(pct, color){
       stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
   </svg>`;
 }
-function ringColorForPct(pct){ return pct > 0 ? pctToColor(pct) : '#c9b8ef'; }
+function ringColorForPct(pct){ return pct > 0 ? pctToColor(pct) : '#9b5de5'; }
 
 function renderEmojiPicker(){
   document.getElementById('emojiPicker').innerHTML = EMOJI_CHOICES.map(e=>
@@ -559,13 +609,28 @@ function render(){
   document.getElementById('dayPill').textContent = todayLabel();
   updateOnboarding();
 
-  const avatarRow = document.getElementById('avatarRow');
-  avatarRow.innerHTML = state.members.map(m=>{
-    return `<button class="avatar-btn ${m.id===myId?'active':''}" data-switch="${m.id}">
+  const sortedMembers = [...state.members].sort((a,b)=>a.name.localeCompare(b.name,'sv'));
+  const currentContent = document.getElementById('currentProfileContent');
+  const meForChip = getMember(myId);
+  currentContent.innerHTML = meForChip
+    ? `<span class="avatar" style="background:${meForChip.color}">${meForChip.initials}</span>${meForChip.name}`
+    : 'Välj profil';
+  document.getElementById('profileDropdown').innerHTML = sortedMembers.map(m=>`
+    <div class="profile-item ${m.id===myId?'active':''}" data-switch="${m.id}">
+      <span class="avatar" style="background:${m.color}">${m.initials}</span>${m.name}
+    </div>
+  `).join('') + `<div class="profile-item add-new" id="addMeBtn">+ Lägg till dig</div>`;
+
+  const weekChart = document.getElementById('weekChart');
+  const byWeek = [...state.members].map(m=>({ m, pct: overallCompletionRate(m, 6) })).sort((a,b)=>b.pct-a.pct);
+  weekChart.innerHTML = byWeek.map(({m,pct})=>`
+    <div class="week-chart-row">
       <span class="avatar" style="background:${m.color}">${m.initials}</span>
-      ${m.name}
-    </button>`;
-  }).join('') + `<button class="avatar-btn add-me" id="addMeBtn">+ Lägg till dig</button>`;
+      <span class="week-chart-name">${m.name}</span>
+      <div class="week-chart-track"><div class="week-chart-fill" style="width:${pct}%;background:${pctToColor(pct)}"></div></div>
+      <span class="week-chart-pct">${pct}%</span>
+    </div>
+  `).join('') || '<div class="empty">Ingen i gänget ännu.</div>';
 
   const me = activeMember();
   const teamGrid = document.getElementById('teamGrid');
@@ -613,25 +678,13 @@ function render(){
   checklist.innerHTML = activeCats(me).map(c=>{
     const on = !!meLog[c.id];
     const s = streakFor(me, c.id);
-    const isEditing = editingCatId === c.id;
-    const labelHtml = isEditing
-      ? `<input class="ci-label-input" data-edit-input="${c.id}" value="${c.label.replace(/"/g,'&quot;')}" maxlength="40">`
-      : `<div class="ci-label">${c.label}</div>`;
-    return `<div class="check-item ${on?'on':''}" data-toggle="${isEditing?'':c.id}">
-      <div class="ci-emoji">${c.emoji||'🎯'}</div>
-      ${labelHtml}
-      ${s>0 && !isEditing?`<div class="ci-streak">🔥${s}</div>`:''}
-      <button class="ci-icon-btn" data-edit="${c.id}" title="Redigera">${isEditing?'💾':'✎'}</button>
-      <button class="ci-icon-btn danger" data-remove="${c.id}" title="Ta bort">×</button>
+    return `<div class="grid-tile ${on?'on':''}" data-toggle="${c.id}" title="${c.label}">
+      ${c.emoji||'🎯'}
+      ${s>0?`<span class="tile-streak">🔥${s}</span>`:''}
     </div>`;
   }).join('') || '<div class="empty">Inga mål ännu — lägg till ett nedan.</div>';
 
   renderEmojiPicker();
-
-  if(editingCatId){
-    const input = document.querySelector(`[data-edit-input="${editingCatId}"]`);
-    if(input){ input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
-  }
 
   document.getElementById('feedList').innerHTML = state.feed.map(f=>`
     <div class="feed-item"><span class="t">${f.text}</span><span class="feed-time">${timeAgo(f.ts)}</span></div>
@@ -740,13 +793,19 @@ function buildStatsModalHTML(){
 
   const goalsHtml = m.categories.map(c=>{
     const s = streakFor(m,c.id);
+    const isEditing = isSelf && editingCatId === c.id;
     const toggleHtml = isSelf
       ? `<button class="status-btn ${c.archived?'is-archived':''}" data-toggle-archive="${c.id}">${c.archived?'Aktivera':'Avaktivera'}</button>`
       : (c.archived ? '<span style="font-size:11px;color:var(--muted)">Inaktivt</span>' : '');
+    const editBtn = isSelf ? `<button class="ci-icon-btn" data-edit="${c.id}" title="Redigera">${isEditing?'💾':'✎'}</button>` : '';
+    const labelPart = isEditing
+      ? `<input class="ci-label-input" data-edit-input="${c.id}" value="${c.label.replace(/"/g,'&quot;')}" maxlength="40" style="flex:1;font-size:12.5px;border:none;border-bottom:1px solid var(--accent);background:transparent;outline:none;font-family:inherit;padding:0 0 1px;">`
+      : `<div style="flex:1;font-size:12.5px;${c.archived?'opacity:.5':''}">${c.label}</div>`;
     return `<div class="goal-row">
       <div class="ci-emoji" style="width:28px;height:28px;font-size:13px">${c.emoji||'🎯'}</div>
-      <div style="flex:1;font-size:12.5px;${c.archived?'opacity:.5':''}">${c.label}</div>
-      ${s>0?`<div class="ci-streak">🔥${s}</div>`:''}
+      ${labelPart}
+      ${s>0 && !isEditing?`<div class="ci-streak">🔥${s}</div>`:''}
+      ${editBtn}
       ${toggleHtml}
     </div>`;
   }).join('') || '<div class="empty">Inga mål ännu.</div>';
@@ -766,6 +825,10 @@ function buildStatsModalHTML(){
     <div class="section-title" style="margin-top:20px">Mål</div>
     <div>${goalsHtml}</div>
   `;
+  if(editingCatId){
+    const input = document.querySelector(`[data-edit-input="${editingCatId}"]`);
+    if(input){ input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  }
 }
 function closeStatsModal(){
   document.getElementById('modalBackdrop').classList.remove('open');
@@ -774,14 +837,20 @@ function closeStatsModal(){
 
 /* ---------- Events ---------- */
 document.addEventListener('click', (e)=>{
+  if(e.target.closest('#currentProfileBtn')){
+    document.getElementById('profileDropdown').classList.toggle('open');
+    return;
+  }
   const switchBtn = e.target.closest('[data-switch]');
   if(switchBtn){
     editingCatId = null;
     setMyId(switchBtn.dataset.switch);
+    document.getElementById('profileDropdown').classList.remove('open');
     render();
     return;
   }
-  if(e.target.id === 'addMeBtn' || e.target.id === 'switchProfileBtn'){
+  if(e.target.id === 'addMeBtn'){
+    document.getElementById('profileDropdown').classList.remove('open');
     document.getElementById('onboardBackdrop').classList.add('open');
     document.getElementById('onboardInput').value = '';
     document.getElementById('onboardInput').focus();
